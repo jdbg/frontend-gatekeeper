@@ -3,7 +3,7 @@
  * Plugin Name:       Frontend Gatekeeper
  * Plugin URI:        https://hwp.bg/frontend-gatekeeper/
  * Description:       Hides the public frontend unless a configured URL parameter is present, then keeps that parameter on same-site links.
- * Version:           1.0.3
+ * Version:           1.0.4
  * Requires at least: 5.7
  * Requires PHP:      8.0
  * Author:            Jordan Hlebarov
@@ -65,11 +65,11 @@ final class Fronga_Plugin {
 
 		$handle = 'fronga-admin';
 
-		wp_register_style( $handle, false, [], '1.0.3' );
+		wp_register_style( $handle, false, [], '1.0.4' );
 		wp_enqueue_style( $handle );
 		wp_add_inline_style( $handle, $this->admin_inline_css() );
 
-		wp_register_script( $handle, false, [], '1.0.3', true );
+		wp_register_script( $handle, false, [], '1.0.4', true );
 		wp_enqueue_script( $handle );
 
 		$data = sprintf(
@@ -391,7 +391,7 @@ final class Fronga_Plugin {
 		}
 
 		$handle = 'fronga-frontend';
-		wp_register_script( $handle, false, [], '1.0.3', true );
+		wp_register_script( $handle, false, [], '1.0.4', true );
 		wp_enqueue_script( $handle );
 
 		$data = sprintf(
@@ -402,7 +402,7 @@ final class Fronga_Plugin {
 		);
 		wp_add_inline_script( $handle, $data, 'before' );
 
-		$script = '(function(){var cfg=window.frongaConfig||{};var name=cfg.name;var value=cfg.value;var home=cfg.home;function sameSite(url){try{var target=new URL(url,window.location.href);var base=new URL(home);if(target.origin!==base.origin){return false;}var basePath=base.pathname.replace(/\/?$/,"/");if(basePath==="/"){return true;}return target.pathname===basePath.slice(0,-1)||target.pathname.indexOf(basePath)===0;}catch(e){return false;}}function addParam(url){try{var target=new URL(url,window.location.href);target.searchParams.set(name,value);return target.toString();}catch(e){return url;}}document.querySelectorAll("a[href],area[href]").forEach(function(link){var href=link.getAttribute("href");if(href&&sameSite(href)){link.setAttribute("href",addParam(href));}});document.querySelectorAll("form").forEach(function(form){var action=form.getAttribute("action")||window.location.href;if(sameSite(action)){form.setAttribute("action",addParam(action));}});})();';
+		$script = '(function(){var cfg=window.frongaConfig||{};var name=cfg.name;var value=cfg.value;var home=cfg.home;var reservedPrefixes=["/wp-content/","/wp-includes/","/wp-admin/"];var reservedFiles=["/wp-login.php","/wp-cron.php","/wp-signup.php","/wp-activate.php","/wp-trackback.php","/wp-comments-post.php","/wp-links-opml.php","/wp-mail.php","/xmlrpc.php"];function isReservedPath(pathname){var lower=String(pathname||"").toLowerCase();for(var i=0;i<reservedPrefixes.length;i++){if(lower.indexOf(reservedPrefixes[i])!==-1){return true;}}for(var j=0;j<reservedFiles.length;j++){if(lower===reservedFiles[j]){return true;}}return false;}function sameSite(url){try{var target=new URL(url,window.location.href);var base=new URL(home);if(target.origin!==base.origin){return false;}if(isReservedPath(target.pathname)){return false;}var basePath=base.pathname.replace(/\/?$/,"/");if(basePath==="/"){return true;}return target.pathname===basePath.slice(0,-1)||target.pathname.indexOf(basePath)===0;}catch(e){return false;}}function addParam(url){try{var target=new URL(url,window.location.href);target.searchParams.set(name,value);return target.toString();}catch(e){return url;}}document.querySelectorAll("a[href],area[href]").forEach(function(link){var href=link.getAttribute("href");if(href&&sameSite(href)){link.setAttribute("href",addParam(href));}});document.querySelectorAll("form").forEach(function(form){var action=form.getAttribute("action")||window.location.href;if(sameSite(action)){form.setAttribute("action",addParam(action));}});})();';
 		wp_add_inline_script( $handle, $script );
 	}
 
@@ -527,6 +527,12 @@ final class Fronga_Plugin {
 			return false;
 		}
 
+		$path = $url_parts['path'] ?? '/';
+
+		if ( $this->is_reserved_wp_path( $path ) ) {
+			return false;
+		}
+
 		$url_host = $url_parts['host'] ?? null;
 		if ( null === $url_host ) {
 			if ( ! empty( $url_parts['scheme'] ) ) {
@@ -534,7 +540,7 @@ final class Fronga_Plugin {
 			}
 
 			if ( 0 === strpos( $url, '/' ) ) {
-				return $this->is_path_within_current_site( $url_parts['path'] ?? '/' );
+				return $this->is_path_within_current_site( $path );
 			}
 
 			return true;
@@ -555,7 +561,48 @@ final class Fronga_Plugin {
 			return false;
 		}
 
-		return $this->is_path_within_current_site( $url_parts['path'] ?? '/' );
+		return $this->is_path_within_current_site( $path );
+	}
+
+	private function is_reserved_wp_path( $path ) {
+		if ( ! is_string( $path ) || '' === $path ) {
+			return false;
+		}
+
+		$normalized = '/' . ltrim( $path, '/' );
+
+		$prefixes = [
+			'/wp-content/',
+			'/wp-includes/',
+			'/wp-admin/',
+		];
+
+		foreach ( $prefixes as $prefix ) {
+			if ( false !== stripos( $normalized, $prefix ) ) {
+				return true;
+			}
+		}
+
+		$reserved_files = [
+			'/wp-login.php',
+			'/wp-cron.php',
+			'/wp-signup.php',
+			'/wp-activate.php',
+			'/wp-trackback.php',
+			'/wp-comments-post.php',
+			'/wp-links-opml.php',
+			'/wp-mail.php',
+			'/xmlrpc.php',
+		];
+
+		$lower = strtolower( $normalized );
+		foreach ( $reserved_files as $file ) {
+			if ( $lower === $file || 0 === strpos( $lower, $file . '?' ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	private function is_path_within_current_site( $path ) {

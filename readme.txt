@@ -4,7 +4,7 @@ Tags: maintenance mode, private site, coming soon, preview, access control
 Requires at least: 5.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.3
+Stable tag: 1.0.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -68,6 +68,9 @@ No. wp-admin, AJAX, cron, the REST API, and `wp-login.php` are always allowed th
 
 == Changelog ==
 
+= 1.0.4 =
+* Fix: the access parameter is no longer appended to URLs under `/wp-content/`, `/wp-includes/`, `/wp-admin/`, or to WordPress core PHP entry points (wp-login.php, xmlrpc.php, etc.). This prevents 500 errors on theme/plugin assets and keeps the parameter off core requests.
+
 = 1.0.3 =
 * Added a Settings link on the Plugins screen row for quicker access to the settings page.
 
@@ -90,6 +93,9 @@ No. wp-admin, AJAX, cron, the REST API, and `wp-login.php` are always allowed th
 * Multisite-aware URL scoping for subdomain and subdirectory networks.
 
 == Upgrade Notice ==
+
+= 1.0.4 =
+Fixes 500 errors caused by the access parameter being appended to theme, plugin, and core asset URLs.
 
 = 1.0.3 =
 Adds a Settings shortcut on the Plugins screen.
