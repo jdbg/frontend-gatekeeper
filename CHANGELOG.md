@@ -2,6 +2,10 @@
 
 All notable changes to Frontend Gatekeeper are documented in this file.
 
+## 1.0.5 - 2026-07-17
+
+- Added `fronga_append_access_param()` and a matching `fronga_append_access_param` filter so other plugins can tag any URL with the access parameter directly, without needing the current request to already be authorized. Intended for plugins that hand out this site's own links to external tools or agents.
+
 ## 1.0.4 - 2026-05-23
 
 - Fix: the access parameter is no longer appended to URLs under `/wp-content/`, `/wp-includes/`, `/wp-admin/`, or to WordPress core PHP entry points (`wp-login.php`, `wp-cron.php`, `xmlrpc.php`, and similar). This prevents 500 errors triggered when the parameter ended up on theme or plugin asset URLs, and keeps the gate from interfering with core requests.

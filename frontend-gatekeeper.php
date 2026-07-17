@@ -3,7 +3,7 @@
  * Plugin Name:       Frontend Gatekeeper
  * Plugin URI:        https://hwp.bg/frontend-gatekeeper/
  * Description:       Hides the public frontend unless a configured URL parameter is present, then keeps that parameter on same-site links.
- * Version:           1.0.4
+ * Version:           1.0.5
  * Requires at least: 5.7
  * Requires PHP:      8.0
  * Author:            Jordan Hlebarov
@@ -56,6 +56,33 @@ final class Fronga_Plugin {
 		add_filter( 'nav_menu_link_attributes', [ $this, 'append_access_parameter_to_link_attributes' ], 10 );
 		add_filter( 'page_menu_link_attributes', [ $this, 'append_access_parameter_to_link_attributes' ], 10 );
 		add_filter( 'render_block', [ $this, 'append_access_parameter_to_block_content' ], 10, 3 );
+		add_filter( 'fronga_append_access_param', [ $this, 'filter_append_access_param' ] );
+	}
+
+	/**
+	 * Public integration point: tag any URL with the access parameter.
+	 *
+	 * Unlike `append_access_parameter_to_url()`, this does not require the
+	 * *current* request to already be authorized — it is meant for other
+	 * plugins that hand out frontend links to external tools/agents (e.g. a
+	 * link returned by an API response) and need those links to survive the
+	 * gate on a later, separate visit. Returns the URL unchanged when the
+	 * gate is off or has no value configured.
+	 *
+	 * @param string $url URL to tag.
+	 * @return string
+	 */
+	public function filter_append_access_param( $url ) {
+		if ( ! is_string( $url ) || '' === $url ) {
+			return $url;
+		}
+
+		$settings = $this->settings();
+		if ( empty( $settings['enabled'] ) || '' === $settings['param_value'] ) {
+			return $url;
+		}
+
+		return add_query_arg( [ $settings['param_name'] => $settings['param_value'] ], $url );
 	}
 
 	public function enqueue_admin_assets( $hook_suffix ) {
@@ -65,11 +92,11 @@ final class Fronga_Plugin {
 
 		$handle = 'fronga-admin';
 
-		wp_register_style( $handle, false, [], '1.0.4' );
+		wp_register_style( $handle, false, [], '1.0.5' );
 		wp_enqueue_style( $handle );
 		wp_add_inline_style( $handle, $this->admin_inline_css() );
 
-		wp_register_script( $handle, false, [], '1.0.4', true );
+		wp_register_script( $handle, false, [], '1.0.5', true );
 		wp_enqueue_script( $handle );
 
 		$data = sprintf(
@@ -391,7 +418,7 @@ final class Fronga_Plugin {
 		}
 
 		$handle = 'fronga-frontend';
-		wp_register_script( $handle, false, [], '1.0.4', true );
+		wp_register_script( $handle, false, [], '1.0.5', true );
 		wp_enqueue_script( $handle );
 
 		$data = sprintf(
@@ -655,3 +682,18 @@ final class Fronga_Plugin {
 }
 
 Fronga_Plugin::instance();
+
+/**
+ * Append Frontend Gatekeeper's access parameter to a URL.
+ *
+ * Integration point for plugins that hand a site's own URLs to external
+ * tools or agents (e.g. an MCP server's ability results) and want those
+ * links to keep working when followed anonymously. No-op — returns $url
+ * unchanged — when Frontend Gatekeeper's gate is off or unconfigured.
+ *
+ * @param string $url URL to tag.
+ * @return string
+ */
+function fronga_append_access_param( $url ) {
+	return apply_filters( 'fronga_append_access_param', $url );
+}

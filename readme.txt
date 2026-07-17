@@ -4,7 +4,7 @@ Tags: maintenance mode, private site, coming soon, preview, access control
 Requires at least: 5.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.4
+Stable tag: 1.0.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -68,6 +68,9 @@ No. wp-admin, AJAX, cron, the REST API, and `wp-login.php` are always allowed th
 
 == Changelog ==
 
+= 1.0.5 =
+* Added a `fronga_append_access_param()` integration function and matching `fronga_append_access_param` filter so other plugins can tag a URL with the access parameter directly, without waiting for an authorized page view first. Intended for plugins that hand out this site's own links to external tools or agents (e.g. an API response) that then fetch those links anonymously.
+
 = 1.0.4 =
 * Fix: the access parameter is no longer appended to URLs under `/wp-content/`, `/wp-includes/`, `/wp-admin/`, or to WordPress core PHP entry points (wp-login.php, xmlrpc.php, etc.). This prevents 500 errors on theme/plugin assets and keeps the parameter off core requests.
 
@@ -93,6 +96,9 @@ No. wp-admin, AJAX, cron, the REST API, and `wp-login.php` are always allowed th
 * Multisite-aware URL scoping for subdomain and subdirectory networks.
 
 == Upgrade Notice ==
+
+= 1.0.5 =
+Adds a `fronga_append_access_param()` integration function for other plugins to tag URLs with the access parameter directly.
 
 = 1.0.4 =
 Fixes 500 errors caused by the access parameter being appended to theme, plugin, and core asset URLs.
